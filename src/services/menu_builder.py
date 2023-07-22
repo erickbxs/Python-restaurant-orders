@@ -1,8 +1,8 @@
 from typing import Dict, List
-
-from services.inventory_control import InventoryMapping
-from services.menu_data import MenuData
+from src.models.dish import Dish
 from src.models.ingredient import restriction_map
+from src.services.inventory_control import InventoryMapping
+from src.services.menu_data import MenuData
 
 DATA_PATH = "data/menu_base_data.csv"
 INVENTORY_PATH = "data/inventory_base_data.csv"
@@ -25,6 +25,16 @@ class MenuBuilder:
 
         self.inventory.consume_recipe(curr_dish.recipe)
 
+    # Req 6
+    def is_dish_available(self, dish: Dish) -> bool:
+        for ingredient, quantity in dish.recipe.items():
+            if (
+                ingredient not in self.inventory.inventory
+                or self.inventory.inventory[ingredient] < quantity
+            ):
+                return False
+        return True
+
     # Req 4
     def get_main_menu(self, restriction: restriction_map = None) -> List[Dict]:
         main_menu = []
@@ -33,11 +43,12 @@ class MenuBuilder:
                 restriction is None
                 or restriction not in dish.get_restrictions()
             ):
-                dish_info = {
-                    "dish_name": dish.name,
-                    "ingredients": list(dish.recipe.keys()),
-                    "price": dish.price,
-                    "restrictions": dish.get_restrictions(),
-                }
-                main_menu.append(dish_info)
+                if self.is_dish_available(dish):
+                    dish_info = {
+                        "dish_name": dish.name,
+                        "ingredients": list(dish.recipe.keys()),
+                        "price": dish.price,
+                        "restrictions": dish.get_restrictions(),
+                    }
+                    main_menu.append(dish_info)
         return main_menu
